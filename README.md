@@ -1,6 +1,6 @@
 # Vydra-CI-CD-virtual-images
 
-So far contains `Dockerfile` for building a docker image with QEMU, VBox, Packer, Vagrant, OpenStack-cli and Ansible.
+So far contains `Dockerfile` based on [johannthorir/packer-vbox](https://hub.docker.com/r/johannthorir/packer-vbox) for building a docker image with QEMU, VBox, Packer, Vagrant, OpenStack-cli and Ansible.
 
 ## Example usage
 ```bash
