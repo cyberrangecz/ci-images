@@ -1,21 +1,24 @@
+image: docker:latest
+
+variables:
+  CI_REGISTRY: "registry.gitlab.ics.muni.cz:443"
+  CI_REGISTRY_IMAGE: muni-kypo-images/kali-linux-2019.4-amd64/packer
+
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN" $CI_REGISTRY
+
 docker-build-master:
-  image: docker:latest
   stage: build
-#  before_script:
-#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
-#    - docker push "$CI_REGISTRY_IMAGE"
+    - docker build --pull -t "$CI_REGISTRY/$CI_REGISTRY_IMAGE" .
+    - docker push "$CI_REGISTRY/$CI_REGISTRY_IMAGE"
   only:
     - master
 
 docker-build:
-  image: docker:latest
   stage: build
-#  before_script:
-#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-#    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker build --pull -t "$CI_REGISTRY/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+    - docker push "$CI_REGISTRY/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   except:
     - master
