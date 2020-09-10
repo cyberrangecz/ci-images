@@ -2,7 +2,7 @@ image: docker:latest
 
 variables:
   CI_REGISTRY: "registry.gitlab.ics.muni.cz:443"
-  CI_REGISTRY_IMAGE: muni-kypo-images/kali-linux-2019.4-amd64/packer
+  CI_REGISTRY_IMAGE: muni-kypo-images/kali-2019.4/packer
 
 before_script:
   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN" $CI_REGISTRY
