@@ -51,7 +51,7 @@ RUN apt-get install -y python3-openstackclient
 
 # Ansible
 #RUN apt-add-repository --yes --update ppa:ansible/ansible
-RUN apt-get install -y --no-install-recommends ansible
+RUN apt-get install -y ansible
 
 
 RUN apt-get -y clean
