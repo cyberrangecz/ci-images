@@ -1,10 +1,10 @@
 image: docker:19
 
 variables:
-  CI_REGISTRY_IMAGE: $CI_REGISTRY/muni-kypo-images/ci-cd-virtual-images/packer
+  CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE/packer
 
 before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
 
 build:
   stage: build
