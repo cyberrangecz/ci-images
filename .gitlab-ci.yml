@@ -1,22 +1,22 @@
 image: docker:19
 
 variables:
-  CI_REGISTRY: "registry.gitlab.ics.muni.cz:443"
-  CI_REGISTRY_IMAGE: $CI_REGISTRY/muni-kypo-images/kali-2019.4/packer
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/muni-kypo-images/ci-cd-virtual-images/packer
 
 before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN" $CI_REGISTRY
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
 build:
   stage: build
   script:
     - docker pull $CI_REGISTRY_IMAGE:latest || true
-    - docker build --pull --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker build --pull --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
 
 test:
   stage: test
-  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  timeout: 3h
   script:
     - packer --version
     - VBoxManage --version
@@ -24,6 +24,11 @@ test:
     - vagrant --version
     - ansible --version
     - openstack --version
+    - cd test
+    - packer build -only=vbox debian.json
+    - packer build -only=qemu debian.json
+    - vagrant box add --name mybox target-vbox/*
+    - vagrant up
 
 push-latest:
   variables:
@@ -32,8 +37,8 @@ push-latest:
   only:
     - master
   script:
-    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:latest
     - docker push $CI_REGISTRY_IMAGE:latest
 
 push-tag:
@@ -43,6 +48,6 @@ push-tag:
   only:
     - tags
   script:
-    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
