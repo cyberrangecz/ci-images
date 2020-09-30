@@ -1,24 +1,48 @@
-image: docker:latest
+image: docker:19
 
 variables:
   CI_REGISTRY: "registry.gitlab.ics.muni.cz:443"
-  CI_REGISTRY_IMAGE: muni-kypo-images/kali-2019.4/packer
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/muni-kypo-images/kali-2019.4/packer
 
 before_script:
   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN" $CI_REGISTRY
 
-docker-build-master:
+build:
   stage: build
   script:
-    - docker build --pull -t "$CI_REGISTRY/$CI_REGISTRY_IMAGE" .
-    - docker push "$CI_REGISTRY/$CI_REGISTRY_IMAGE"
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --pull --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+test:
+  stage: test
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  script:
+    - packer --version
+    - VBoxManage --version
+    - qemu-system-x86_64 --version
+    - vagrant --version
+    - ansible --version
+    - openstack --version
+
+push-latest:
+  variables:
+    GIT_STRATEGY: none
+  stage: deploy
   only:
     - master
-
-docker-build:
-  stage: build
   script:
-    - docker build --pull -t "$CI_REGISTRY/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-  except:
-    - master
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+push-tag:
+  variables:
+    GIT_STRATEGY: none
+  stage: deploy
+  only:
+    - tags
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
