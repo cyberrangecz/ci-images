@@ -1,7 +1,7 @@
 image: docker:19
 
 variables:
-  CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE/packer
+  CI_REGISTRY_IMAGE: registry.gitlab.ics.muni.cz:443/muni-kypo-images/ci-cd-virtual-images/packer
   DOCKER_TLS_CERTDIR: "/certs"
 
 services:
