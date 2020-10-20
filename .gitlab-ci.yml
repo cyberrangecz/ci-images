@@ -7,8 +7,11 @@ variables:
 services:
   - docker:19.03.12-dind
 
-before_script:
-  - echo -n $CI_JOB_TOKEN | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+default:
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  tags:
+    - muni-kypo
 
 build:
   stage: build
