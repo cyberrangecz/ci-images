@@ -8,7 +8,7 @@ stages:
 
 default:
   tags:
-    - muni-kypo
+    - image-builder
 
 validate:
   stage: validate

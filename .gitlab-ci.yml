@@ -1,17 +1,17 @@
-image: docker:19.03.12
+image: docker:19
 
 variables:
   CI_REGISTRY_IMAGE: registry.gitlab.ics.muni.cz:443/muni-kypo-images/ci-cd-virtual-images/packer
   DOCKER_TLS_CERTDIR: "/certs"
 
-#services:
-#  - docker:19.03.12-dind
+services:
+  - docker:19-dind
 
 default:
   before_script:
     - echo -n $CI_JOB_TOKEN | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   tags:
-    - muni-kypo
+    - image-builder
 
 build:
   stage: build
