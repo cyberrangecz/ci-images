@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     jq \
     wget \
-    software-properties-common
+    software-properties-common \
+    xvfb
 
 # QEMU
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qemu-kvm ebtables libguestfs-tools
