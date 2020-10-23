@@ -18,7 +18,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qe
 # Virtualbox
 RUN echo "deb https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list
 RUN wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
-RUN apt-get update && apt-get install -y virtualbox-6.1
+RUN apt-get update && apt-get install -y virtualbox-dkms virtualbox-6.1
 RUN VIRTUALBOX_VERSION=`wget -q -O- https://download.virtualbox.org/virtualbox/LATEST.TXT` && \
     wget -q https://download.virtualbox.org/virtualbox/${VIRTUALBOX_VERSION}/Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
     echo "y" | VBoxManage extpack install Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
