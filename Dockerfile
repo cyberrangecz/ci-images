@@ -17,9 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qemu-kvm ebtables libguestfs-tools
 
 # Virtualbox
-RUN echo "deb https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list && \
-    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add - && \
-    apt-get update && apt-get install -y linux-headers-$(uname -r) virtualbox-dkms virtualbox-6.1
+RUN apt-get install -y linux-headers-generic virtualbox
 
 RUN VIRTUALBOX_VERSION=`wget -q -O- https://download.virtualbox.org/virtualbox/LATEST.TXT` && \
     wget -q https://download.virtualbox.org/virtualbox/${VIRTUALBOX_VERSION}/Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
