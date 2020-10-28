@@ -19,7 +19,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qe
 # Virtualbox
 RUN apt-get install -y linux-headers-generic virtualbox
 
-RUN VIRTUALBOX_VERSION=`wget -q -O- https://download.virtualbox.org/virtualbox/LATEST.TXT` && \
+RUN VIRTUALBOX_VERSION=`VBoxManage --version | sed -r 's/([0-9]+\.[0-9]+\.[0-9]+).*/\1/'` && \
     wget -q https://download.virtualbox.org/virtualbox/${VIRTUALBOX_VERSION}/Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
     echo "y" | VBoxManage extpack install Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
     rm Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack
