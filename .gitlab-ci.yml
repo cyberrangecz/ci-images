@@ -4,8 +4,8 @@ variables:
   CI_REGISTRY_IMAGE: registry.gitlab.ics.muni.cz:443/muni-kypo-images/ci-cd-virtual-images/packer
   DOCKER_TLS_CERTDIR: "/certs"
 
-services:
-  - docker:19-dind
+#services:
+#  - docker:19-dind
 
 default:
   before_script:
