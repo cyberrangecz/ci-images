@@ -46,7 +46,7 @@ build-vbox:
 
 test-qemu:
   stage: test
-  script:
+  script:   # Changes made to this script need to be manually reflected in the windows template
     - ssh-keygen -f ./id_rsa -N "" -C mykey
     - mkdir -p drive/openstack/latest
     - echo "{\"uuid\":\"d8e02d56-2648-49a3-bf97-6be8f1204f38\", \"public_keys\":{\"mykey\":\"`cat id_rsa.pub`\"}}" > drive/openstack/latest/meta_data.json
@@ -65,11 +65,12 @@ test-vbox:
   resource_group: virtual-machine
   needs: ["build-vbox"]
 
-deploy-qemu:
+deploy-qemu-test:
   stage: deploy
+  before_script:
+    - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - test ! -z "$VERSION"   # Check VERSION is nonempty
-    - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO $CI_PROJECT_NAME-$VERSION
+    - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
   when: manual
   needs: ["build-qemu", "test-qemu"]
   variables:
@@ -79,6 +80,13 @@ deploy-qemu:
     OS_INTERFACE: "public"
     OS_REGION_NAME: "brno1"
 
+deploy-qemu-master:
+  extends: deploy-qemu-test
+  before_script:
+    - test ! -z "$VERSION"
+  only:
+    - master
+
 deploy-vbox:
   stage: deploy
   script:
@@ -87,7 +95,6 @@ deploy-vbox:
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
-    - curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/release --request PUT
   when: manual
   needs: ["build-vbox", "test-vbox"]
   only:
