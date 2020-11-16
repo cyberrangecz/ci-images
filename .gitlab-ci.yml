@@ -4,6 +4,10 @@ variables:
   CI_REGISTRY_IMAGE: registry.gitlab.ics.muni.cz:443/muni-kypo-images/ci-cd-virtual-images/packer
   DOCKER_TLS_CERTDIR: "/certs"
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_MESSAGE !~ /template/i
+
 #services:
 #  - docker:19-dind
 
@@ -18,8 +22,6 @@ build:
   script:
     - docker build --pull --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-  allow_failure: false
-  when: manual
 
 test:
   stage: test

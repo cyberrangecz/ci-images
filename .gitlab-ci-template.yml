@@ -6,6 +6,11 @@ stages:
   - test
   - deploy
 
+workflow:
+  rules:
+    - if: &qemu $CI_COMMIT_MESSAGE =~ /qemu/i
+    - if: &vbox $CI_COMMIT_MESSAGE =~ /vbox/i
+
 default:
   tags:
     - image-builder
@@ -22,8 +27,6 @@ validate:
   cache:
     paths:
       - packer_cache
-  when: manual
-  allow_failure: false
   timeout: 3h
   resource_group: virtual-machine
   needs: ["validate"]
@@ -35,6 +38,9 @@ build-qemu:
   artifacts:
     paths:
       - target-qemu/*
+  only: &only-qemu
+    variables:
+      - *qemu
 
 build-vbox:
   extends: .build
@@ -43,6 +49,9 @@ build-vbox:
   artifacts:
     paths:
       - target-vbox/*
+  only: &only-vbox
+    variables:
+      - *vbox
 
 test-qemu:
   stage: test
@@ -55,6 +64,7 @@ test-qemu:
     - echo "ssh ansible_user=$DISTRO ansible_port=2222 ansible_host=127.0.0.1 ansible_connection=ssh" > inventory
     - ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook --private-key id_rsa -i inventory --ssh-extra-args "-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s" --timeout=30 -v playbook.yml
   resource_group: virtual-machine
+  only: *only-qemu
   needs: ["build-qemu"]
 
 test-vbox:
@@ -63,6 +73,7 @@ test-vbox:
     - vagrant box add --name mybox target-vbox/*
     - vagrant up
   resource_group: virtual-machine
+  only: *only-vbox
   needs: ["build-vbox"]
 
 deploy-qemu-test:
@@ -72,6 +83,9 @@ deploy-qemu-test:
   script:
     - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
   when: manual
+  only: *only-qemu
+  except:
+    - master
   needs: ["build-qemu", "test-qemu"]
   variables:
     OS_AUTH_TYPE: "v3applicationcredential"
@@ -84,8 +98,10 @@ deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
     - test ! -z "$VERSION"
+  except: []
   only:
-    - master
+    refs:
+      - master
 
 deploy-vbox:
   stage: deploy
@@ -98,7 +114,10 @@ deploy-vbox:
   when: manual
   needs: ["build-vbox", "test-vbox"]
   only:
-    - master
+    refs:
+      - master
+    variables:
+      - *vbox
   variables:
     VAGRANT_CLOUD_USER: "munikypo"
     DESCRIPTION: "placeholder"
