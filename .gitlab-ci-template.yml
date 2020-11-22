@@ -98,6 +98,9 @@ deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
     - test ! -z "$VERSION"
+  after_script:
+    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
+    - git push origin --tags
   except: []
   only:
     refs:
@@ -111,6 +114,9 @@ deploy-vbox:
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
+  after_script:
+    - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
+    - git push origin --tags
   when: manual
   needs: ["build-vbox", "test-vbox"]
   only:
