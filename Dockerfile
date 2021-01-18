@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 # Prerequisities
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     lsb-release \
     openssh-client \
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qemu-kvm ebtables libguestfs-tools
 
 # Virtualbox
-RUN apt-get install -y linux-headers-generic virtualbox
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y linux-headers-generic virtualbox
 
 RUN VIRTUALBOX_VERSION=`VBoxManage --version | sed -r -e '/[0-9]+\.[0-9]+\.[0-9]+/!d' -e 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/'` && \
     wget -q https://download.virtualbox.org/virtualbox/${VIRTUALBOX_VERSION}/Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
@@ -48,7 +48,7 @@ RUN VAGRANT_VERSION=`wget -O- https://releases.hashicorp.com/vagrant/ 2> /dev/nu
     rm vagrant.zip
 
 # Openstack-cli
-RUN apt-get install -y python3-openstackclient
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3-openstackclient
 
 # Ansible
 #RUN apt-add-repository --yes --update ppa:ansible/ansible
