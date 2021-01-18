@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 # Prerequisities
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y tzdata --no-install-recommends && apt-get install -y --no-install-recommends \
     ca-certificates \
     lsb-release \
     openssh-client \
