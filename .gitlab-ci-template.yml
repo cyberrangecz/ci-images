@@ -83,7 +83,7 @@ deploy-qemu-test:
   before_script:
     - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
+    - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
   except:
@@ -100,9 +100,21 @@ deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
     - test ! -z "$VERSION"
-  after_script:
-    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
-    - git push origin --tags
+  script:
+   - *openstack-deploy
+   - if [ openstack image show $CI_PROJECT_NAME ]; then  # Previous image version exists
+   -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/")
+   -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
+   -   if [ openstack image show $CI_PROJECT_NAME-$PREV_VERSION ]; then
+   -     openstack image delete $CI_PROJECT_NAME || openstack image set $CI_PROJECT_NAME --name $CI_PROJECT_NAME-DEPRECATED
+   -   else
+   -     openstack image set $CI_PROJECT_NAME --name $CI_PROJECT_NAME-$PREV_VERSION
+   -   fi
+   - fi
+   - openstack image set $CI_PROJECT_NAME-$VERSION --name $CI_PROJECT_NAME
+   - *openstack-deploy
+   - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
+   - git push origin --tags
   except: []
   only:
     refs:
@@ -116,7 +128,6 @@ deploy-vbox:
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
-  after_script:
     - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
     - git push origin --tags
   when: manual
