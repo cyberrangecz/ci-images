@@ -1,5 +1,8 @@
 include: .gitlab-ci-template.yml
 
+.build:
+  timeout: 6h
+
 build-qemu:
   before_script:
     - wget -nv -nc https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O virtio-win.iso
