@@ -88,7 +88,7 @@ deploy-qemu-test:
   only: *only-qemu
   except:
     - master
-  needs: ["build-qemu", "test-qemu"]
+  needs: ["build-qemu"]
   variables:
     OS_AUTH_TYPE: "v3applicationcredential"
     OS_AUTH_URL: "https://identity.cloud.muni.cz/v3"
@@ -117,6 +117,7 @@ deploy-qemu-master:
    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
    - git push --tags http://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:master
   except: []
+  needs: ["build-qemu", "test-qemu"]
   only:
     refs:
       - master

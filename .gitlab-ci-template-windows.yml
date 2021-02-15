@@ -19,3 +19,5 @@ test-qemu:
     - printf "winrm ansible_user=$DISTRO ansible_port=55986 ansible_host=127.0.0.1 ansible_connection=winrm ansible_winrm_server_cert_validation=ignore ansible_winrm_cert_pem=drive/openstack/latest/user_data ansible_winrm_cert_key_pem=id_rsa ansible_winrm_transport=certificate\nssh ansible_user=$DISTRO ansible_port=2222 ansible_host=127.0.0.1 ansible_connection=ssh ansible_shell_type=powershell" > inventory
     - ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook --private-key id_rsa -i inventory --ssh-extra-args "-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s" --timeout=30 -v playbook.yml
 
+deploy-qemu-master:
+  needs: ["build-qemu"]
