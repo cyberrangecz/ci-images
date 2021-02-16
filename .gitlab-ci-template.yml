@@ -86,8 +86,6 @@ deploy-qemu-test:
     - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
-  except:
-    - master
   needs: ["build-qemu"]
   variables:
     OS_AUTH_TYPE: "v3applicationcredential"
@@ -103,7 +101,7 @@ deploy-qemu-master:
   script:
    - *openstack-deploy
    - if openstack image show $CI_PROJECT_NAME > /dev/null; then  # Previous image version exists
-   -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/")
+   -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/") || true
    -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
    -   if openstack image show $CI_PROJECT_NAME-$PREV_VERSION > /dev/null; then
    -     openstack image delete $CI_PROJECT_NAME || openstack image set $CI_PROJECT_NAME --name $CI_PROJECT_NAME-DEPRECATED
@@ -116,7 +114,6 @@ deploy-qemu-master:
    - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
    - git push --tags http://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:master
-  except: []
   needs: ["build-qemu", "test-qemu"]
   only:
     refs:
