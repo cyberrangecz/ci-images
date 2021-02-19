@@ -24,7 +24,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y linux-headers-generic virt
 RUN VIRTUALBOX_VERSION=`VBoxManage --version | sed -r -e '/[0-9]+\.[0-9]+\.[0-9]+/!d' -e 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/'` && \
     wget -q https://download.virtualbox.org/virtualbox/${VIRTUALBOX_VERSION}/Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
     echo "y" | VBoxManage extpack install Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
-    rm Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack
+    rm Oracle_VM_VirtualBox_Extension_Pack-${VIRTUALBOX_VERSION}.vbox-extpack && \
+    VBoxManage setproperty vrdeextpack "Oracle VM VirtualBox Extension Pack"
 
 # Packer
 RUN PACKER_VERSION=`wget -O- https://releases.hashicorp.com/packer/ 2> /dev/null \

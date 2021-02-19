@@ -83,7 +83,7 @@ deploy-qemu-test:
   before_script:
     - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
+    - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
   needs: ["build-qemu"]
@@ -98,8 +98,8 @@ deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
     - test ! -z "$VERSION"
-  script:
-   - *openstack-deploy
+  script:  # openstack-deploy is also a few lines above in deploy-qemu-test, but it does not have the --community
+   - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --community $CI_PROJECT_NAME-$VERSION
    - if openstack image show $CI_PROJECT_NAME > /dev/null; then  # Previous image version exists
    -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/") || true
    -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
