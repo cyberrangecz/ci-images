@@ -21,3 +21,6 @@ test-qemu:
 
 deploy-qemu-master:
   needs: ["build-qemu"]
+
+deploy-vbox:
+  needs: ["build-box"]
