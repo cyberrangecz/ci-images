@@ -85,7 +85,7 @@ deploy-qemu-test:
   before_script:
     - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION $CI_PROJECT_NAME-$VERSION
+    - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --shared $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
   needs: ["build-qemu"]
@@ -100,8 +100,9 @@ deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
     - test ! -z "$VERSION"
-  script:  # openstack-deploy is also a few lines above in deploy-qemu-test, but it does not have the --community
-   - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --community $CI_PROJECT_NAME-$VERSION
+  script:
+   - *openstack-deploy
+   - HEAD_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
    - if openstack image show $CI_PROJECT_NAME > /dev/null; then  # Previous image version exists
    -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/") || true
    -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
@@ -113,9 +114,20 @@ deploy-qemu-master:
    - fi
    - openstack image set $CI_PROJECT_NAME-$VERSION --name $CI_PROJECT_NAME
    - *openstack-deploy
+   - STABLE_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
    - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
    - git push --tags https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_DEFAULT_BRANCH
+   - while read -r PROJECT_ID; do
+   -   openstack image add project $HEAD_IMAGE_ID $PROJECT_ID
+   -   openstack image add project $STABLE_IMAGE_ID $PROJECT_ID
+   - done < <(echo $APPLICATION_CREDENTIALS | jq -r '.[] | .project_id')
+   - while read -r APP_ID && read -r APP_SECRET; do
+   -   OS_APPLICATION_CREDENTIAL_ID=$APP_ID
+   -   OS_APPLICATION_CREDENTIAL_SECRET=$APP_SECRET
+   -   openstack image set --accept $HEAD_IMAGE_ID
+   -   openstack image set --accept $STABLE_IMAGE_ID
+   - done < <(echo $APPLICATION_CREDENTIALS | jq -r '.[] | (.app_cred_id, .app_cred_secret)')
   needs: ["build-qemu", "test-qemu"]
   only:
     refs:
