@@ -1,4 +1,4 @@
-image: registry.gitlab.ics.muni.cz:443/muni-kypo-images/ci-cd-virtual-images/packer:latest
+image: registry.gitlab.ics.muni.cz:443/muni-kypo-images/docker-image-builder/packer:latest
 
 stages:
   - validate
