@@ -103,7 +103,8 @@ deploy-qemu-master:
   script:
    - *openstack-deploy
    - HEAD_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
-   - if openstack image show $CI_PROJECT_NAME > /dev/null; then  # Previous image version exists
+   # If previous image version exists, delete it or rename it. Once all our images follow the latest naming convention, this block can be simplified
+   - if openstack image show $CI_PROJECT_NAME > /dev/null; then
    -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/") || true
    -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
    -   if openstack image show $CI_PROJECT_NAME-$PREV_VERSION > /dev/null; then
@@ -115,13 +116,16 @@ deploy-qemu-master:
    - openstack image set $CI_PROJECT_NAME-$VERSION --name $CI_PROJECT_NAME
    - *openstack-deploy
    - STABLE_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
+   # Create a Git tag
    - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
    - git push --tags https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_DEFAULT_BRANCH
+   # Share the image to other OpenStack projects
    - while read -r PROJECT_ID; do
    -   openstack image add project $HEAD_IMAGE_ID $PROJECT_ID
    -   openstack image add project $STABLE_IMAGE_ID $PROJECT_ID
    - done < <(echo $APPLICATION_CREDENTIALS | jq -r '.[] | .project_id')
+   # Accept the sharing from each project
    - while read -r APP_ID && read -r APP_SECRET; do
    -   OS_APPLICATION_CREDENTIAL_ID=$APP_ID
    -   OS_APPLICATION_CREDENTIAL_SECRET=$APP_SECRET
@@ -141,6 +145,7 @@ deploy-vbox:
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
+    # Create a Git tag
     - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
     - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
     - git push --tags https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_DEFAULT_BRANCH
