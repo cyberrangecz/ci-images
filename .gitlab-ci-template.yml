@@ -87,7 +87,7 @@ deploy-qemu-test:
   before_script:
     - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --shared $CI_PROJECT_NAME-$VERSION
+    - &openstack-deploy openstack image create --file target-qemu/* --smp 4 -device nec-usb-xhci,id=usb,bus=pci.0,addr=0x4 -device usb-tablet --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --shared $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
   needs: ["build-qemu"]
