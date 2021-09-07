@@ -66,7 +66,7 @@ test-qemu:
     - echo "{\"uuid\":\"d8e02d56-2648-49a3-bf97-6be8f1204f38\", \"public_keys\":{\"mykey\":\"`cat id_rsa.pub`\"}}" > drive/openstack/latest/meta_data.json
     - mkisofs -R -J -V config-2 -o config.img drive/
     # Run the VM, run Ansible
-    - qemu-system-x86_64 -accel kvm -m size=4096 -net nic -net user,hostfwd=tcp::2222-:22 -cdrom config.img target-qemu/* &
+    - qemu-system-x86_64 -accel kvm -m size=4096 --smp 4 -device nec-usb-xhci,id=usb,bus=pci.0,addr=0x4 -device usb-tablet -net nic -net user,hostfwd=tcp::2222-:22 -cdrom config.img target-qemu/* &
     - echo "ssh ansible_user=$DISTRO ansible_port=2222 ansible_host=127.0.0.1 ansible_connection=ssh" > inventory
     - ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook --private-key id_rsa -i inventory --ssh-extra-args "-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s" --timeout=30 -v playbook.yml
   resource_group: virtual-machine
@@ -87,7 +87,7 @@ deploy-qemu-test:
   before_script:
     - VERSION=$CI_COMMIT_SHORT_SHA
   script:
-    - &openstack-deploy openstack image create --file target-qemu/* --smp 4 -device nec-usb-xhci,id=usb,bus=pci.0,addr=0x4 -device usb-tablet --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --shared $CI_PROJECT_NAME-$VERSION
+    - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --shared $CI_PROJECT_NAME-$VERSION
   when: manual
   only: *only-qemu
   needs: ["build-qemu"]

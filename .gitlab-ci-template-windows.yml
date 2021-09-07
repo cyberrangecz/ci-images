@@ -15,12 +15,6 @@ test-qemu:
     - printf "distinguished_name = req_distinguished_name\n[req_distinguished_name]\n[v3_req_client]\nextendedKeyUsage = clientAuth\nsubjectAltName = otherName:1.3.6.1.4.1.311.20.2.3;UTF8:$DISTRO@localhost\n" > openssl.conf
     - OPENSSL_CONF=openssl.conf openssl req -x509 -nodes -days 3650 -new -key id_rsa -out drive/openstack/latest/user_data -outform PEM -subj "/CN=$DISTRO" -extensions v3_req_client
     - mkisofs -R -J -V config-2 -o config.img drive/
-    - qemu-system-x86_64 -accel kvm -m size=4096 -net nic -net user,hostfwd=tcp::2222-:22,hostfwd=tcp::55986-:5986 -cdrom config.img target-qemu/* &
+    - qemu-system-x86_64 -accel kvm -m size=4096 --smp 4 -device nec-usb-xhci,id=usb,bus=pci.0,addr=0x4 -device usb-tablet -net nic -net user,hostfwd=tcp::2222-:22,hostfwd=tcp::55986-:5986 -cdrom config.img target-qemu/* &
     - printf "winrm ansible_user=$DISTRO ansible_port=55986 ansible_host=127.0.0.1 ansible_connection=winrm ansible_winrm_server_cert_validation=ignore ansible_winrm_cert_pem=drive/openstack/latest/user_data ansible_winrm_cert_key_pem=id_rsa ansible_winrm_transport=certificate\nssh ansible_user=$DISTRO ansible_port=2222 ansible_host=127.0.0.1 ansible_connection=ssh ansible_shell_type=powershell" > inventory
     - ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook --private-key id_rsa -i inventory --ssh-extra-args "-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s" --timeout=30 -v playbook.yml
-
-deploy-qemu-master:
-  needs: ["build-qemu"]
-
-deploy-vbox:
-  needs: ["build-vbox"]
