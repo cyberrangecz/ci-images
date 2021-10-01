@@ -121,7 +121,7 @@ deploy-qemu-master:
    # Create a Git tag
    - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
    - git tag -a "qemu-$VERSION" -m "Qemu version $VERSION"
-   - git push --tags https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_DEFAULT_BRANCH
+   - git push https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git "qemu-$VERSION"
    # Share the image to other OpenStack projects
    - while read -r PROJECT_ID; do
    -   openstack image add project $HEAD_IMAGE_ID $PROJECT_ID
@@ -150,7 +150,7 @@ deploy-vbox:
     # Create a Git tag
     - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
     - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
-    - git push --tags https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_DEFAULT_BRANCH
+    - git push https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git "vbox-$VERSION"
   when: manual
   needs: ["build-vbox", "test-vbox"]
   only:
