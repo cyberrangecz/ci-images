@@ -5,7 +5,7 @@ include: .gitlab-ci-template.yml
 
 build-qemu:
   before_script:
-    - wget -nv -nc https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O virtio-win.iso
+    - wget -nc https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O virtio-win.iso
 
 test-qemu:
   script:
