@@ -15,6 +15,9 @@ workflow:
     - if: &qemu $CI_COMMIT_MESSAGE =~ /qemu/i
     - if: &vbox $CI_COMMIT_MESSAGE =~ /vbox/i
 
+variables:
+  GUI_ACCESS: "false"
+
 default:
   tags:
     - image-builder
