@@ -104,14 +104,17 @@ deploy-qemu-test:
 deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
-    - test ! -z "$VERSION"
+    - if [ -z "$VERSION" ]; then
+    -   KEY='qemu'
+    -   VERSION=$(cat CHANGELOG.md | sed -r -e "/##\s+.*\[$KEY-[0-9]+\.[0-9]+\.[0-9]+\]/!d" -e "s/.*$KEY-([0-9]+\.[0-9]+\.[0-9]+).*/\1/" | sort --version-sort --reverse | head -n 1)
+    -   test ! -z "$VERSION"
+    - fi
   script:
    - *openstack-deploy
    - HEAD_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
    # If previous image version exists, delete it or rename it. Once all our images follow the latest naming convention, this block can be simplified
    - if openstack image show $CI_PROJECT_NAME > /dev/null; then
-   -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME | grep owner_specified.openstack.version | sed -r "s/.*owner_specified.openstack.version='([a-zA-Z0-9.]*)'.*/\1/") || true
-   -   if [ -z "$PREV_VERSION" ]; then PREV_VERSION=0.1.0; fi
+   -   PREV_VERSION=$(openstack image show $CI_PROJECT_NAME --column properties --format json | jq '.properties."owner_specified.openstack.version"' -re) || PREV_VERSION=0.1.0
    -   if openstack image show $CI_PROJECT_NAME-$PREV_VERSION > /dev/null; then
    -     openstack image delete $CI_PROJECT_NAME || openstack image set $CI_PROJECT_NAME --name $CI_PROJECT_NAME-DEPRECATED
    -   else
@@ -144,12 +147,18 @@ deploy-qemu-master:
 
 deploy-vbox:
   stage: deploy
+  before_script:
+    - if [ -z "$VERSION" ]; then
+    -   KEY='vbox'
+    -   VERSION=$(cat CHANGELOG.md | sed -r -e "/##\s+.*\[$KEY-[0-9]+\.[0-9]+\.[0-9]+\]/!d" -e "s/.*$KEY-([0-9]+\.[0-9]+\.[0-9]+).*/\1/" | sort --version-sort --reverse | head -n 1)
+    -   test ! -z "$VERSION"
+    - fi
   script:
-    - test ! -z "$VERSION"
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/versions --data "{\"version\":{\"version\":\"$VERSION\",\"description\":\"$DESCRIPTION\"}}"
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
+#    - curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN"  https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/release --request PUT
     # Create a Git tag
     - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
     - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
