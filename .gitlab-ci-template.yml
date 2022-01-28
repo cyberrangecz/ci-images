@@ -155,12 +155,14 @@ deploy-vbox:
     -   test ! -z "$VERSION"
     - fi
     - echo "$VERSION"
+    - DESCRIPTION=$(cat CHANGELOG.md | sed -nr "/##\s+.*\[$KEY-$VERSION\]/, /^(## )?\[/ p" | sed -r '1d;$d')
+    - echo "$DESCRIPTION"
   script:
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/versions --data "{\"version\":{\"version\":\"$VERSION\",\"description\":\"$DESCRIPTION\"}}"
     - curl --header "Content-Type:application/json" --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/providers  --data "{\"provider\":{\"checksum\":\"`sha1sum target-vbox/* | awk '{print $1}'`\",\"checksum_type\":\"sha1\",\"name\":\"virtualbox\"}}"
     - UPLOAD_PATH=$(curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN" https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/provider/virtualbox/upload | jq -r .upload_path)
     - curl $UPLOAD_PATH --request PUT --upload-file target-vbox/*
-#    - curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN"  https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/release --request PUT
+    - curl --header "Authorization:Bearer $VAGRANT_CLOUD_TOKEN"  https://app.vagrantup.com/api/v1/box/$VAGRANT_CLOUD_USER/$CI_PROJECT_NAME/version/$VERSION/release --request PUT
     # Create a Git tag
     - git config user.name "$GITLAB_USER_NAME"; git config user.email "$GITLAB_USER_EMAIL"
     - git tag -a "vbox-$VERSION" -m "VBox version $VERSION"
@@ -174,4 +176,3 @@ deploy-vbox:
       - *vbox
   variables:
     VAGRANT_CLOUD_USER: "munikypo"
-    DESCRIPTION: "placeholder"
