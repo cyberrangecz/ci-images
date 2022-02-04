@@ -104,8 +104,8 @@ deploy-qemu-test:
 deploy-qemu-master:
   extends: deploy-qemu-test
   before_script:
+    - KEY='qemu'
     - if [ -z "$VERSION" ]; then
-    -   KEY='qemu'
     -   VERSION=$(cat CHANGELOG.md | sed -r -e "/##\s+.*\[$KEY-[0-9]+\.[0-9]+\.[0-9]+\]/!d" -e "s/.*$KEY-([0-9]+\.[0-9]+\.[0-9]+).*/\1/" | sort --version-sort --reverse | head -n 1)
     -   test ! -z "$VERSION"
     - fi
@@ -149,8 +149,8 @@ deploy-qemu-master:
 deploy-vbox:
   stage: deploy
   before_script:
+    - KEY='vbox'
     - if [ -z "$VERSION" ]; then
-    -   KEY='vbox'
     -   VERSION=$(cat CHANGELOG.md | sed -r -e "/##\s+.*\[$KEY-[0-9]+\.[0-9]+\.[0-9]+\]/!d" -e "s/.*$KEY-([0-9]+\.[0-9]+\.[0-9]+).*/\1/" | sort --version-sort --reverse | head -n 1)
     -   test ! -z "$VERSION"
     - fi
