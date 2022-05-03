@@ -12,8 +12,7 @@ workflow:
       when: never
     - if: $CI_MERGE_REQUEST_ID
       when: never
-    - if: &qemu $CI_COMMIT_MESSAGE =~ /qemu/i
-    - if: &vbox $CI_COMMIT_MESSAGE =~ /vbox/i
+    - when: always
 
 variables:
   GUI_ACCESS: "false"
@@ -34,6 +33,7 @@ validate:
   cache:
     paths:
       - packer_cache
+  when: manual
   timeout: 3h
   resource_group: virtual-machine
   needs: ["validate"]
@@ -45,9 +45,6 @@ build-qemu:
   artifacts:
     paths:
       - target-qemu/*
-  only: &only-qemu
-    variables:
-      - *qemu
 
 build-vbox:
   extends: .build
@@ -56,9 +53,6 @@ build-vbox:
   artifacts:
     paths:
       - target-vbox/*
-  only: &only-vbox
-    variables:
-      - *vbox
 
 test-qemu:
   stage: test
@@ -73,7 +67,6 @@ test-qemu:
     - echo "ssh ansible_user=$DISTRO ansible_port=2222 ansible_host=127.0.0.1 ansible_connection=ssh" > inventory
     - ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook --private-key id_rsa -i inventory --ssh-extra-args "-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s" --timeout=30 -v playbook.yml
   resource_group: virtual-machine
-  only: *only-qemu
   needs: ["build-qemu"]
 
 test-vbox:
@@ -82,7 +75,6 @@ test-vbox:
     - vagrant box add --name mybox target-vbox/*
     - vagrant up
   resource_group: virtual-machine
-  only: *only-vbox
   needs: ["build-vbox"]
 
 deploy-qemu-test:
@@ -92,7 +84,6 @@ deploy-qemu-test:
   script:
     - &openstack-deploy openstack image create --file target-qemu/* --property hw_scsi_model=virtio-scsi --property hw_disk_bus=scsi --property hw_rng_model=virtio --property hw_qemu_guest_agent=yes --property os_require_quiesce=yes --property os_type=$TYPE --property os_distro=$DISTRO --property owner_specified.openstack.version=$VERSION --property owner_specified.openstack.gui_access=$GUI_ACCESS --property owner_specified.openstack.created_by=munikypo --shared $CI_PROJECT_NAME-$VERSION
   when: manual
-  only: *only-qemu
   needs: ["build-qemu"]
   variables:
     OS_AUTH_TYPE: "v3applicationcredential"
@@ -172,7 +163,5 @@ deploy-vbox:
   only:
     refs:
       - master
-    variables:
-      - *vbox
   variables:
     VAGRANT_CLOUD_USER: "munikypo"
