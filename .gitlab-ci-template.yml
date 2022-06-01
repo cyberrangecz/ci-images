@@ -110,6 +110,32 @@ deploy-qemu-test:
     - fi
     - echo "$VERSION"
 
+.upload-image-to-openstack-object-store:
+  script:
+    - cd target-qemu
+    - IMAGE_FILENAME=$(ls)
+    - mv $IMAGE_FILENAME $IMAGE_FILENAME.raw
+
+    - s3cmd -c $S3_CREDENTIALS get s3://kypo-images/SHA256SUMS SHA256SUMS
+    - s3cmd -c $S3_CREDENTIALS get s3://kypo-images/MD5SUMS MD5SUMS
+
+    - zip $CI_PROJECT_NAME.raw.zip $IMAGE_FILENAME.raw
+    - sed -i "/$CI_PROJECT_NAME.raw.zip/d" SHA256SUMS
+    - sha256sum $CI_PROJECT_NAME.raw.zip >> SHA256SUMS
+    - sed -i "/$CI_PROJECT_NAME.raw.zip/d" MD5SUMS
+    - md5sum $CI_PROJECT_NAME.raw.zip >> MD5SUMS
+
+    - qemu-img convert -f raw -O qcow2 $IMAGE_FILENAME.raw $CI_PROJECT_NAME.qcow2
+    - sed -i "/$CI_PROJECT_NAME.qcow2/d" SHA256SUMS
+    - sha256sum $CI_PROJECT_NAME.qcow2 >> SHA256SUMS
+    - sed -i "/$CI_PROJECT_NAME.qcow2/d" MD5SUMS
+    - md5sum $CI_PROJECT_NAME.qcow2 >> MD5SUMS
+
+    - sort -k 2 -o SHA256SUMS SHA256SUMS
+    - sort -k 2 -o MD5SUMS MD5SUMS
+    - s3cmd -c $S3_CREDENTIALS put $CI_PROJECT_NAME.qcow2 $CI_PROJECT_NAME.raw.zip SHA256SUMS MD5SUMS s3://kypo-images
+    - cd -
+
 deploy-qemu-master:
   extends: deploy-qemu-test
   before_script: !reference [.get-version-from-changelog, script]
@@ -141,7 +167,9 @@ deploy-qemu-master:
    -   openstack image set --accept $HEAD_IMAGE_ID
    -   openstack image set --accept $STABLE_IMAGE_ID
    - done < <(echo $APPLICATION_CREDENTIALS | jq -r '.[] | (.app_cred_id, .app_cred_secret)')
+   - !reference [.upload-image-to-openstack-object-store, script]
   needs: ["build-qemu", "test-qemu"]
+  timeout: 2h
   only:
     refs:
       - master
