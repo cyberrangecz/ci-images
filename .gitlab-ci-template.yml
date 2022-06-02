@@ -167,7 +167,9 @@ deploy-qemu-master:
    -   openstack image set --accept $HEAD_IMAGE_ID
    -   openstack image set --accept $STABLE_IMAGE_ID
    - done < <(echo $APPLICATION_CREDENTIALS | jq -r '.[] | (.app_cred_id, .app_cred_secret)')
-   - !reference [.upload-image-to-openstack-object-store, script]
+   - if [ $TYPE != "windows" ]; then
+   -   !reference [.upload-image-to-openstack-object-store, script]
+   - fi
   needs: ["build-qemu", "test-qemu"]
   timeout: 2h
   only:
