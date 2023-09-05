@@ -1,0 +1,43 @@
+include: qemu-build-deploy.yml
+
+test-qemu:
+  image: registry.gitlab.com/gitlab-org/terraform-images/releases/1.4:v1.0.0
+  stage: test
+  script:
+    - gitlab-terraform plan
+    - gitlab-terraform apply || (gitlab-terraform output ; exit 1)
+  resource_group: ${TF_STATE_NAME}
+  environment:
+    name: $TF_STATE_NAME
+    url: $POOL_URL
+    on_stop: test-qemu-cleanup
+    auto_stop_in: 1 week
+  needs: ["build-qemu"]
+  cache:
+    key: "${TF_ROOT}"
+    paths:
+      - ${TF_ROOT}/.terraform/
+  artifacts:
+    paths:
+      - outputs/
+    when: always
+    reports:
+      dotenv: vars.env
+  variables:
+    TF_ROOT: ${CI_PROJECT_DIR}
+    TF_STATE_NAME: ${CI_COMMIT_REF_SLUG}
+    TF_VAR_NAME: ${NAME}
+    TF_VAR_TYPE: ${TYPE}
+    TF_VAR_DISTRO: ${DISTRO}
+    TF_VAR_GUI_ACCESS: ${GUI_ACCESS}
+    TF_VAR_ACCESS_TOKEN: ${ACCESS_TOKEN}
+    TF_VAR_CI_SERVER_HOST: ${CI_SERVER_HOST}
+    TF_VAR_CI_COMMIT_SHORT_SHA: ${CI_COMMIT_SHORT_SHA}
+
+test-qemu-cleanup:
+  extends: test-qemu
+  script:
+    - gitlab-terraform destroy
+  environment:
+    action: stop
+  when: manual
