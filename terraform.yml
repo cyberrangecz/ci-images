@@ -7,7 +7,7 @@
   environment:
     name: $TF_STATE_NAME
     url: $POOL_URL
-    auto_stop_in: 1 week
+    auto_stop_in: 5 days
   cache:
     key: "${TF_ROOT}"
     paths:
