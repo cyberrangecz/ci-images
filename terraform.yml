@@ -35,5 +35,6 @@ workflow:
     - gitlab-terraform destroy
   environment:
     action: stop
+  artifacts: null
   when: manual
 
