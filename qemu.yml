@@ -1,6 +1,6 @@
 include: 
-  - local: qemu-build-deploy.yml
   - local: terraform.yml
+  - local: qemu-build-deploy.yml
 
 test-qemu:
   extends: .terraform-build
