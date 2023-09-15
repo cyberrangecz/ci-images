@@ -1,3 +1,0 @@
-include: 
-  - local: qemu-old.yml
-  - local: vbox.yml
