@@ -20,9 +20,6 @@ variables:
 
 .build:
   stage: build
-  cache:
-    paths:
-      - packer_cache
   when: manual
   allow_failure: false
   timeout: 3h
