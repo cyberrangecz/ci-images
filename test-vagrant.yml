@@ -7,3 +7,8 @@ test-vagrant:
     - vagrant up
   tags:
     - image-builder
+  cache:
+    paths: 
+      - .vagrant-cache/boxes
+  variables:
+    VAGRANT_HOME: $CI_PROJECT_DIR/.vagrant-cache
