@@ -1,5 +1,5 @@
 include:
-  - local: terraform.yml
+  - https://gitlab.ics.muni.cz/muni-kypo-images/ci-cd-virtual-images/-/raw/master/terraform.yml
 
 test-kypo:
   extends: .terraform-build
