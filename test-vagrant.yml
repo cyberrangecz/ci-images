@@ -10,5 +10,6 @@ test-vagrant:
   cache:
     paths: 
       - .vagrant-cache/boxes
+    when: always
   variables:
     VAGRANT_HOME: $CI_PROJECT_DIR/.vagrant-cache
