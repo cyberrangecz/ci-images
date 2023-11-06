@@ -20,5 +20,3 @@ test-qemu-cleanup:
   extends:
     - test-qemu
     - .terraform-destroy
-  needs:
-    - test-qemu
