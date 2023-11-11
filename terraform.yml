@@ -33,6 +33,7 @@ workflow:
 .terraform-destroy:
   script:
     - gitlab-terraform destroy
+    - curl --header "Private-Token:${TF_PASSWORD:-$CI_JOB_TOKEN}" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}" || true
   environment:
     action: stop
   artifacts: null
