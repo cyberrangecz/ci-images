@@ -8,6 +8,7 @@ test-vagrant:
   tags:
     - image-builder
   cache:
+    key: shared-cache
     paths: 
       - .vagrant-cache/boxes
     when: always
