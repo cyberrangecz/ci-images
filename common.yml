@@ -26,6 +26,10 @@ variables:
   resource_group: virtual-machine
   tags:
     - image-builder
+  before_script:
+    - packer plugins install github.com/hashicorp/qemu
+    - packer plugins install github.com/hashicorp/virtualbox
+    - packer plugins install github.com/hashicorp/vagrant
 
 .upload-image-to-openstack:
   script:
