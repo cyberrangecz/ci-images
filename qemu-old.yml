@@ -1,5 +1,16 @@
 include: qemu-build-deploy.yml
 
+build-qemu:
+  script:
+    - packer build -only=qemu $NAME.json
+  artifacts:
+    paths:
+      - target-qemu/*
+
+deploy-qemu:
+  before_script:
+   - !reference [.get-version-from-changelog, script]
+
 test-qemu:
   stage: test
   script:

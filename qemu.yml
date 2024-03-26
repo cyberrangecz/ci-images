@@ -1,5 +1,4 @@
 include: 
-  - local: terraform.yml
   - local: qemu-build-deploy.yml
 
 test-qemu:
