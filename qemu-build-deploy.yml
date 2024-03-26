@@ -1,16 +1,28 @@
-include: common.yml
+include:
+  - local: terraform.yml
+  - local: common.yml
 
 build-qemu:
   extends: .build
   script:
     - packer build -only=qemu $NAME.json
-  artifacts:
-    paths:
-      - target-qemu/*
+    - gitlab-tofu destroy
+    - gitlab-tofu plan -target=module.topology.openstack_images_image_v2.test_image
+    - gitlab-tofu apply
+  variables: !reference [.build-qemu-vars, variables]
+
+.build-qemu-vars:
+  extends:
+    - .terraform-build
+    - deploy-qemu
+    - test-qemu
 
 deploy-qemu:
   stage: deploy
-  before_script: !reference [.get-version-from-changelog, script]
+  before_script:
+   - !reference [.get-version-from-changelog, script]
+   - mkdir -p target-qemu
+   - openstack image save --file "target-qemu/$NAME" "$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA"
   script:
    - !reference [.upload-image-to-openstack, script]
    - HEAD_IMAGE_ID=$(openstack image show --column id --format value $CI_PROJECT_NAME-$VERSION)
@@ -44,7 +56,7 @@ deploy-qemu:
    - fi
   needs: ["build-qemu", "test-qemu"]
   when: manual
-  timeout: 2h
+  timeout: 3h
   only:
     refs:
       - master

@@ -23,7 +23,6 @@ variables:
   when: manual
   allow_failure: false
   timeout: 3h
-  resource_group: virtual-machine
   tags:
     - image-builder
   before_script:
