@@ -41,6 +41,8 @@ jobs:
     runs-on: gha-runner-scale-set-cyberrangecz
     container:
       image: ghcr.io/cybersecurityhubcz/opentofu-runner:1.10.3
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
