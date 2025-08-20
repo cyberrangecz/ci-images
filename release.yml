@@ -1,0 +1,93 @@
+on:
+  workflow_call:
+    secrets:
+      IMAGES_OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      IMAGES_OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+      IMAGES_AWS_SSE_CUSTOMER_KEY:
+        required: true
+      S3_STATES_AWS_ACCESS_KEY_ID:
+        required: true
+      S3_STATES_AWS_SECRET_ACCESS_KEY:
+        required: true
+      S3_CRCZP_IMAGES_AWS_ACCESS_KEY_ID:
+        required: true
+      S3_CRCZP_IMAGES_AWS_SECRET_ACCESS_KEY:
+        required: true
+
+env:
+  OS_AUTH_TYPE: v3applicationcredential
+  OS_AUTH_URL: https://192.168.53.10:5000
+  OS_IDENTITY_API_VERSION: 3
+  OS_INTERFACE: public
+  OS_REGION_NAME: RegionOne
+  OS_INSECURE: true
+  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_ID }}
+  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_SECRET }}
+
+  AWS_SSE_CUSTOMER_KEY: ${{ secrets.IMAGES_AWS_SSE_CUSTOMER_KEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.S3_STATES_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_STATES_AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  release:
+    runs-on: gha-runner-scale-set-cyberrangecz
+    container:
+      image: ghcr.io/cyberrangecz/docker-image-builder
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove image from OpenTofu state
+        run: |
+          tofu init
+          tofu workspace select "$GITHUB_REF_NAME"
+          tofu state rm module.topology.openstack_images_image_v2.test_image
+
+      - name: Get short SHA
+        uses: benjlevesque/short-sha@v3.0
+
+      - name: Set NAME env vars
+        run: cat terraform.tfvars | grep NAME | sed -E 's|.*=[ ]*"(.*)"|NAME=\1|' | tee -a "$GITHUB_OUTPUT"
+
+      - name: Get previous image version
+        run: |
+          PREV_VERSION=$(openstack image show $NAME --column properties --format json | jq '.properties."owner_specified.openstack.version"' -re) || PREV_VERSION=0.1.0
+          echo $PREV_VERSION | tee -a "$GITHUB_OUTPUT"
+
+      - name: Rename previous image
+        run: openstack image set $NAME --name $NAME-$PREV_VERSION || echo "::warning::Previous image $NAME not found"
+
+      - name: Rename latest image and set as public
+        run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF
+
+      - name: Download image locally
+        run: openstack image save --file "$NAME.qcow2" "$NAME"
+
+      - name: Upload image to s3
+        run: |
+          cat <<EOF> s3.conf
+          [default]
+          host_base = gm7ve.upcloudobjects.com
+          host_bucket = %(bucket)s.gm7ve.upcloudobjects.com
+          use_https = True
+          EOF
+
+          s3cmd -c s3.conf get s3://crczp-images/SHA256SUMS SHA256SUMS
+          s3cmd -c s3.conf get s3://crczp-images/MD5SUMS MD5SUMS
+
+          sed -i "/$NAME.qcow2/d" SHA256SUMS
+          sha256sum $NAME.qcow2 >> SHA256SUMS
+          sort -k 2 -o SHA256SUMS SHA256SUMS
+
+          sed -i "/$NAME.qcow2/d" MD5SUMS
+          md5sum $NAME.qcow2 >> MD5SUMS
+          sort -k 2 -o MD5SUMS MD5SUMS
+
+          s3cmd -c s3.conf put $NAME.qcow2 SHA256SUMS MD5SUMS s3://crczp-images
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_CRCZP_IMAGES_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_CRCZP_IMAGES_AWS_SECRET_ACCESS_KEY }}
