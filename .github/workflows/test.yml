@@ -61,7 +61,7 @@ jobs:
         run: packer plugins install github.com/hashicorp/qemu
 
       - name: Build image
-        run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ packer_filename }}
+        run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ inputs.packer_filename }}
 
       - name: Get short SHA
         uses: benjlevesque/short-sha@v3.0
