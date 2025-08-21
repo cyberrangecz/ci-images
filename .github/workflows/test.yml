@@ -48,9 +48,6 @@ jobs:
     runs-on: ["self-hosted", "images"]
     container:
       image: ghcr.io/cyberrangecz/docker-image-builder
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
       options: --privileged
       ports:
         - 5900:5900
