@@ -83,6 +83,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: checkout fix
+        run: git config --system --add safe.directory $GITHUB_WORKSPACE
 
       - name: Get short SHA
         uses: benjlevesque/short-sha@v3.0

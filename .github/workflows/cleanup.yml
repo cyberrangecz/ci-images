@@ -45,6 +45,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: checkout fix
+        run: git config --system --add safe.directory $GITHUB_WORKSPACE
 
       - name: OpenTofu Init
         run: |
