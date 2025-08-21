@@ -1,0 +1,12 @@
+on:
+  push:
+    branches:
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: cyberrangecz/ci-images/.github/workflows/test.yml
+    with:
+      packer_only:      # If there are multiple configurations, build only this one, otherwise omit
+      packer_filename:  # If using json syntax, name of the json file, otherwise omit
+    secrets: inherit

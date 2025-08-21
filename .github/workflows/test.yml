@@ -1,0 +1,100 @@
+on:
+  workflow_call:
+    inputs:
+      packer_only:
+        type: string
+        required: false
+      packer_filename:
+        type: string
+        required: false
+    secrets:
+      IMAGES_OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      IMAGES_OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+      IMAGES_AWS_SSE_CUSTOMER_KEY:
+        required: true
+      S3_STATES_AWS_ACCESS_KEY_ID:
+        required: true
+      S3_STATES_AWS_SECRET_ACCESS_KEY:
+        required: true
+      IMAGES_CRCZP_USERNAME:
+        required: true
+      IMAGES_CRCZP_PASSWORD:
+        required: true
+
+env:
+  TF_VAR_PROJECT_URL: ${{ github.server_url }}/${{ github.repository }}
+
+  OS_AUTH_TYPE: v3applicationcredential
+  OS_AUTH_URL: https://192.168.53.10:5000
+  OS_IDENTITY_API_VERSION: 3
+  OS_INTERFACE: public
+  OS_REGION_NAME: RegionOne
+  OS_INSECURE: true
+  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_ID }}
+  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_SECRET }}
+
+  AWS_SSE_CUSTOMER_KEY: ${{ secrets.IMAGES_AWS_SSE_CUSTOMER_KEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.S3_STATES_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_STATES_AWS_SECRET_ACCESS_KEY }}
+
+  CRCZP_ENDPOINT: https://prod.platform.cyberrange.cz
+  CRCZP_USERNAME: ${{ secrets.IMAGES_CRCZP_USERNAME }}
+  CRCZP_PASSWORD: ${{ secrets.IMAGES_CRCZP_PASSWORD }}
+
+jobs:
+  build:
+    runs-on: ["self-hosted", "images"]
+    container:
+      image: ghcr.io/cyberrangecz/docker-image-builder
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --privileged
+      ports:
+        - 5900:5900
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packer qemu plugin
+        run: packer plugins install github.com/hashicorp/qemu
+
+      - name: Build image
+        run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ inputs.packer_filename }}
+
+      - name: Get short SHA
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          variable_name: TF_VAR_REV
+
+      - name: Upload image with OpenTofu
+        run: |
+          tofu init
+          tofu workspace select "$GITHUB_REF_NAME" || tofu workspace new "$GITHUB_REF_NAME"
+          tofu apply -auto-approve -input=false -target=module.topology.openstack_images_image_v2.test_image
+
+  test:
+    needs: [build]
+    runs-on: gha-runner-scale-set-cyberrangecz
+    container:
+      image: ghcr.io/cybersecurityhubcz/opentofu-runner:1.10.3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: checkout fix
+        run: git config --system --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Get short SHA
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          variable_name: TF_VAR_REV
+
+      - name: OpenTofu Init
+        run: |
+          tofu init
+          tofu workspace select "$GITHUB_REF_NAME"
+
+      - name: OpenTofu Apply
+        run: tofu apply -auto-approve -input=false
