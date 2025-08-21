@@ -53,7 +53,7 @@ jobs:
       - name: Get previous image version
         run: |
           PREV_VERSION=$(openstack image show $NAME --column properties --format json --insecure | jq '.properties."owner_specified.openstack.version"' -re) || PREV_VERSION=0.1.0
-          echo $PREV_VERSION | tee -a "$GITHUB_OUTPUT"
+          echo PREV_VERSION=$PREV_VERSION | tee -a "$GITHUB_OUTPUT"
 
       - name: Rename previous image
         run: openstack image set $NAME --name $NAME-$PREV_VERSION --insecure || echo "::warning::Previous image $NAME not found"
