@@ -62,7 +62,7 @@ jobs:
         run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF_NAME --insecure
 
       - name: Download image locally
-        run: openstack image save --file "$NAME.qcow2" "$NAME"
+        run: openstack image save --file "$NAME.qcow2" "$NAME" --insecure
 
       - name: Upload image to s3
         run: |
