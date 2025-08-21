@@ -42,7 +42,7 @@ jobs:
         run: |
           tofu init
           tofu workspace select ${{ github.event.repository.default_branch }}
-          tofu state rm module.topology.openstack_images_image_v2.test_image
+          tofu state rm module.topology.openstack_images_image_v2.test_image || echo "::warning::Image not found in tfstate"
 
       - name: Get short SHA
         uses: benjlevesque/short-sha@v3.0
@@ -52,14 +52,14 @@ jobs:
 
       - name: Get previous image version
         run: |
-          PREV_VERSION=$(openstack image show $NAME --column properties --format json | jq '.properties."owner_specified.openstack.version"' -re) || PREV_VERSION=0.1.0
+          PREV_VERSION=$(openstack image show $NAME --column properties --format json --insecure | jq '.properties."owner_specified.openstack.version"' -re) || PREV_VERSION=0.1.0
           echo $PREV_VERSION | tee -a "$GITHUB_OUTPUT"
 
       - name: Rename previous image
-        run: openstack image set $NAME --name $NAME-$PREV_VERSION || echo "::warning::Previous image $NAME not found"
+        run: openstack image set $NAME --name $NAME-$PREV_VERSION --insecure || echo "::warning::Previous image $NAME not found"
 
       - name: Rename latest image and set as public
-        run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF_NAME
+        run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF_NAME --insecure
 
       - name: Download image locally
         run: openstack image save --file "$NAME.qcow2" "$NAME"
