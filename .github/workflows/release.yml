@@ -35,16 +35,13 @@ jobs:
     runs-on: gha-runner-scale-set-cyberrangecz
     container:
       image: ghcr.io/cyberrangecz/docker-image-builder
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Remove image from OpenTofu state
         run: |
           tofu init
-          tofu workspace select "$GITHUB_REF_NAME"
+          tofu workspace select ${{ github.event.repository.default_branch }}
           tofu state rm module.topology.openstack_images_image_v2.test_image
 
       - name: Get short SHA
@@ -62,7 +59,7 @@ jobs:
         run: openstack image set $NAME --name $NAME-$PREV_VERSION || echo "::warning::Previous image $NAME not found"
 
       - name: Rename latest image and set as public
-        run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF
+        run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF_NAME
 
       - name: Download image locally
         run: openstack image save --file "$NAME.qcow2" "$NAME"
