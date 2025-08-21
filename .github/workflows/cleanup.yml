@@ -38,6 +38,7 @@ env:
 
 jobs:
   cleanup:
+    if: "!startsWith(github.event.ref, 'citest')"
     runs-on: gha-runner-scale-set-cyberrangecz
     container:
       image: ghcr.io/cybersecurityhubcz/opentofu-runner:1.10.3
