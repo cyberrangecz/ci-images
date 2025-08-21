@@ -45,6 +45,7 @@ env:
 
 jobs:
   build:
+    if: "github.event.ref_type != 'tag'"
     runs-on: ["self-hosted", "images"]
     container:
       image: ghcr.io/cyberrangecz/docker-image-builder
