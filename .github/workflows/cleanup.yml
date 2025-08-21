@@ -51,7 +51,7 @@ jobs:
       - name: OpenTofu Init
         run: |
           tofu init
-          tofu workspace select "$GITHUB_REF_NAME"
+          tofu workspace select ${{ github.event.ref }}
 
       - name: OpenTofu Destroy
         run: tofu destroy -auto-approve -input=false
@@ -59,4 +59,4 @@ jobs:
       - name: OpenTofu Delete Workspace
         run: |
           tofu workspace select default
-          tofu workspace delete "$GITHUB_REF_NAME"
+          tofu workspace delete ${{ github.event.ref }}
