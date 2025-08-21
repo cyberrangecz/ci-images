@@ -54,6 +54,8 @@ jobs:
           tofu workspace select ${{ github.event.ref }}
 
       - name: OpenTofu Destroy
+        env:
+          TF_VAR_REV: "to-delete"
         run: tofu destroy -auto-approve -input=false
 
       - name: OpenTofu Delete Workspace
