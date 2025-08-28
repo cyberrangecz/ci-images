@@ -47,7 +47,7 @@ jobs:
       - name: Get short SHA
         uses: benjlevesque/short-sha@v3.0
 
-      - name: Set NAME env vars
+      - name: Set NAME env var
         run: cat terraform.tfvars | grep NAME | sed -E 's|.*=[ ]*"(.*)"|NAME=\1|' >> "$GITHUB_ENV"
 
       - name: Get previous image version

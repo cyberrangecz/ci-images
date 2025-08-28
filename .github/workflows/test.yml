@@ -7,6 +7,11 @@ on:
       packer_filename:
         type: string
         required: false
+        default: "."
+      tofu_import_image:
+        type: boolean
+        required: false
+        default: false
     secrets:
       IMAGES_OS_APPLICATION_CREDENTIAL_ID:
         required: true
@@ -58,6 +63,9 @@ jobs:
       - name: Install packer qemu plugin
         run: packer plugins install github.com/hashicorp/qemu
 
+      - name: Run packer init
+        run: packer init ${{ inputs.packer_filename }} || true
+
       - name: Build image
         run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ inputs.packer_filename }}
 
@@ -66,11 +74,21 @@ jobs:
         with:
           variable_name: TF_VAR_REV
 
-      - name: Upload image with OpenTofu
+      - name: Set NAME env var
+        run: cat terraform.tfvars | grep NAME | sed -E 's|.*=[ ]*"(.*)"|NAME=\1|' >> "$GITHUB_ENV"
+
+      - name: Initialize OpenTofu
         run: |
           tofu init
           tofu workspace select "$GITHUB_REF_NAME" || tofu workspace new "$GITHUB_REF_NAME"
-          tofu apply -auto-approve -input=false -target=module.topology.openstack_images_image_v2.test_image
+
+      - name: Upload image with OpenTofu
+        if: !var.tofu_import_image
+        run: tofu apply -auto-approve -input=false -target=module.topology.openstack_images_image_v2.test_image
+
+      - name: Import image to OpenTofu
+        if: var.tofu_import_image
+        run: tofu apply import module.topology.openstack_images_image_v2.test_image $(openstack image show $NAME-$TF_VAR_REV --column id --format raw --insecure)
 
   test:
     needs: [build]
