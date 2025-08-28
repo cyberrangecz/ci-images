@@ -70,9 +70,6 @@ jobs:
       - name: Run packer init
         run: packer init ${{ inputs.packer_filename }} || true
 
-      - name: Build image
-        run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ inputs.packer_filename }}
-
       - name: Get short SHA
         uses: benjlevesque/short-sha@v3.0
         with:
@@ -80,6 +77,9 @@ jobs:
 
       - name: Set NAME env var
         run: cat terraform.tfvars | grep NAME | sed -E 's|.*=[ ]*"(.*)"|NAME=\1|' >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: packer build ${{ inputs.packer_only && format('-only={0}', inputs.packer_only) }} ${{ inputs.packer_filename }}
 
       - name: Initialize OpenTofu
         run: |
