@@ -52,10 +52,6 @@ env:
   CRCZP_USERNAME: ${{ secrets.IMAGES_CRCZP_USERNAME }}
   CRCZP_PASSWORD: ${{ secrets.IMAGES_CRCZP_PASSWORD }}
 
-defaults:
-  run:
-    shell: signal-fanout {0}
-
 jobs:
   build:
     if: "github.event.ref_type != 'tag'"
@@ -66,8 +62,6 @@ jobs:
       ports:
         - 5900:5900
     steps:
-      - uses: jsoref/signal-fanout@c4aaa067cb278157a5f03488579f2a435cabaa5a
-
       - uses: actions/checkout@v4
 
       - name: Install packer qemu plugin
@@ -108,8 +102,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: jsoref/signal-fanout@c4aaa067cb278157a5f03488579f2a435cabaa5a
-
       - uses: actions/checkout@v4
       - name: checkout fix
         run: git config --system --add safe.directory $GITHUB_WORKSPACE

@@ -30,18 +30,12 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.S3_STATES_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_STATES_AWS_SECRET_ACCESS_KEY }}
 
-defaults:
-  run:
-    shell: signal-fanout {0}
-
 jobs:
   release:
     runs-on: gha-runner-scale-set-cyberrangecz
     container:
       image: ghcr.io/cyberrangecz/docker-image-builder
     steps:
-      - uses: jsoref/signal-fanout@c4aaa067cb278157a5f03488579f2a435cabaa5a
-
       - uses: actions/checkout@v4
 
       - name: Remove image from OpenTofu state
