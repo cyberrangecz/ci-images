@@ -86,13 +86,16 @@ jobs:
           tofu init
           tofu workspace select "$GITHUB_REF_NAME" || tofu workspace new "$GITHUB_REF_NAME"
 
+      - name: OpenTofu Destroy
+        run: tofu destroy -auto-approve -input=false
+
       - name: Upload image with OpenTofu
         if: ${{ !inputs.tofu_import_image }}
         run: tofu apply -auto-approve -input=false -target=module.topology.openstack_images_image_v2.test_image
 
       - name: Import image to OpenTofu
         if: ${{ inputs.tofu_import_image }}
-        run: tofu apply import module.topology.openstack_images_image_v2.test_image $(openstack image show $NAME-$TF_VAR_REV --column id --format raw --insecure)
+        run: tofu import module.topology.openstack_images_image_v2.test_image $(openstack image show $NAME-$TF_VAR_REV --column id --format value --insecure)
 
   test:
     needs: [build]
