@@ -51,8 +51,9 @@ jobs:
 
       - name: OpenTofu Init
         run: |
+          REF="${{ github.event.ref }}"
           tofu init
-          tofu workspace select ${{ github.event.ref }}
+          tofu workspace select ${REF#refs/heads/}
 
       - name: OpenTofu Destroy
         env:
@@ -61,5 +62,6 @@ jobs:
 
       - name: OpenTofu Delete Workspace
         run: |
+          REF="${{ github.event.ref }}"
           tofu workspace select default
-          tofu workspace delete ${{ github.event.ref }}
+          tofu workspace delete ${REF#refs/heads/}
