@@ -54,7 +54,6 @@ env:
 
 jobs:
   build:
-    if: "${{ github.event.ref_type}} != 'tag'"
     runs-on: "${{ inputs.use_images_runner && 'images' || 'gha-runner-scale-set-cyberrangecz' }}"
     container:
       image: ghcr.io/cyberrangecz/docker-image-builder
