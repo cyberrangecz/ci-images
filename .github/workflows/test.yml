@@ -63,6 +63,8 @@ jobs:
         - 5900:5900
     steps:
       - uses: actions/checkout@v4
+      - name: checkout fix
+        run: git config --system --add safe.directory $GITHUB_WORKSPACE
 
       - name: Install packer qemu plugin
         run: packer plugins install github.com/hashicorp/qemu
