@@ -84,7 +84,15 @@ jobs:
           md5sum $NAME.qcow2 >> MD5SUMS
           sort -k 2 -o MD5SUMS MD5SUMS
 
-          s3cmd -c s3.conf put $NAME.qcow2 SHA256SUMS MD5SUMS s3://crczp-images
+          s3cmd -c s3.conf get s3://crczp-images/index.html index.html
+          sed -i "/$NAME.qcow2/d" index.html
+          grep '<li>' index.html > list
+          echo "<li><a href=\"$NAME.qcow2\">$NAME.qcow2</a></li>" >> list
+          LC_ALL=C sort list > sorted_list
+          sed -i '/<li>/,/<\/ul>/d' index.html
+          sed -i -e '/<ul.*/{r sorted_list' -e 'a </ul>' -e '}' index.html
+
+          s3cmd -c s3.conf put $NAME.qcow2 SHA256SUMS MD5SUMS index.html s3://crczp-images
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_CRCZP_IMAGES_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_CRCZP_IMAGES_AWS_SECRET_ACCESS_KEY }}
