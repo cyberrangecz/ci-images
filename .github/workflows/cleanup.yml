@@ -32,7 +32,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.S3_STATES_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_STATES_AWS_SECRET_ACCESS_KEY }}
 
-  CRCZP_ENDPOINT: https://prod.platform.cyberrange.cz
+  CRCZP_ENDPOINT: https://images.platform.cyberrange.cz
   CRCZP_USERNAME: ${{ secrets.IMAGES_CRCZP_USERNAME }}
   CRCZP_PASSWORD: ${{ secrets.IMAGES_CRCZP_PASSWORD }}
 
