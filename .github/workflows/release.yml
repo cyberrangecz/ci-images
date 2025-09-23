@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      release_to_s3:
+        type: boolean
+        required: false
+        default: true
     secrets:
       IMAGES_OS_APPLICATION_CREDENTIAL_ID:
         required: true
@@ -62,9 +67,11 @@ jobs:
         run: openstack image set $NAME-$SHA --name $NAME --public --property owner_specified.openstack.version=$GITHUB_REF_NAME --insecure
 
       - name: Download image locally
+        if: ${{ inputs.release_to_s3 }}
         run: openstack image save --file "$NAME.qcow2" "$NAME" --insecure
 
       - name: Upload image to s3
+        if: ${{ inputs.release_to_s3 }}
         run: |
           cat <<EOF> s3.conf
           [default]
