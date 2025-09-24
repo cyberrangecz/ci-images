@@ -98,6 +98,10 @@ jobs:
         if: ${{ inputs.tofu_import_image }}
         run: tofu import module.topology.openstack_images_image_v2.test_image $(openstack image show $NAME-$TF_VAR_REV --column id --format value --insecure)
 
+      - name: Cleanup workdir
+        if: always()
+        run: git clean -ffdx && git reset --hard HEAD
+
   test:
     needs: [build]
     runs-on: gha-runner-scale-set-cyberrangecz
