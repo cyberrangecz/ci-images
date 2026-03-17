@@ -17,40 +17,17 @@ on:
         required: false
         default: true
     secrets:
-      IMAGES_OS_APPLICATION_CREDENTIAL_ID:
+      IMAGES_VAULT_ROLE_ID:
         required: true
-      IMAGES_OS_APPLICATION_CREDENTIAL_SECRET:
-        required: true
-      IMAGES_AWS_SSE_CUSTOMER_KEY:
-        required: true
-      S3_STATES_AWS_ACCESS_KEY_ID:
-        required: true
-      S3_STATES_AWS_SECRET_ACCESS_KEY:
-        required: true
-      IMAGES_CRCZP_USERNAME:
-        required: true
-      IMAGES_CRCZP_PASSWORD:
+      IMAGES_VAULT_SECRET_ID:
         required: true
 
 env:
   TF_VAR_PROJECT_URL: ${{ github.server_url }}/${{ github.repository }}
 
-  OS_AUTH_TYPE: v3applicationcredential
-  OS_AUTH_URL: https://192.168.53.10:5000
   OS_IDENTITY_API_VERSION: 3
   OS_INTERFACE: public
-  OS_REGION_NAME: RegionOne
   OS_INSECURE: true
-  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_ID }}
-  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.IMAGES_OS_APPLICATION_CREDENTIAL_SECRET }}
-
-  AWS_SSE_CUSTOMER_KEY: ${{ secrets.IMAGES_AWS_SSE_CUSTOMER_KEY }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.S3_STATES_AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_STATES_AWS_SECRET_ACCESS_KEY }}
-
-  CRCZP_ENDPOINT: https://images.platform.cyberrange.cz
-  CRCZP_USERNAME: ${{ secrets.IMAGES_CRCZP_USERNAME }}
-  CRCZP_PASSWORD: ${{ secrets.IMAGES_CRCZP_PASSWORD }}
 
 jobs:
   build:
@@ -64,6 +41,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: checkout fix
         run: git config --system --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Import AWS Secrets from Vault
+        id: import-secrets
+        uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
+        with:
+          url: https://192.168.54.53:8200
+          method: approle
+          roleId: ${{ secrets.IMAGES_VAULT_ROLE_ID }}
+          secretId: ${{ secrets.IMAGES_VAULT_SECRET_ID }}
+          tlsSkipVerify: true
+          secrets: |
+            secret/data/terraform/aws-credentials access_key | AWS_ACCESS_KEY_ID ;
+            secret/data/terraform/aws-credentials secret_key | AWS_SECRET_ACCESS_KEY ;
+            secret/data/images/images_sse sse_customer_key | AWS_SSE_CUSTOMER_KEY ;
+            secret/data/images/application-credentials * ;
+            secret/data/crczp-images-credentials * ;
 
       - name: Install packer qemu plugin
         run: packer plugins install github.com/hashicorp/qemu
@@ -118,6 +111,22 @@ jobs:
         uses: benjlevesque/short-sha@v3.0
         with:
           variable_name: TF_VAR_REV
+
+      - name: Import AWS Secrets from Vault
+        id: import-secrets
+        uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
+        with:
+          url: https://192.168.54.53:8200
+          method: approle
+          roleId: ${{ secrets.IMAGES_VAULT_ROLE_ID }}
+          secretId: ${{ secrets.IMAGES_VAULT_SECRET_ID }}
+          tlsSkipVerify: true
+          secrets: |
+            secret/data/terraform/aws-credentials access_key | AWS_ACCESS_KEY_ID ;
+            secret/data/terraform/aws-credentials secret_key | AWS_SECRET_ACCESS_KEY ;
+            secret/data/images/images_sse sse_customer_key | AWS_SSE_CUSTOMER_KEY ;
+            secret/data/images/application-credentials * ;
+            secret/data/crczp-images-credentials * ;
 
       - name: OpenTofu Init
         run: |
